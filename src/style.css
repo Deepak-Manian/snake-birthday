@@ -468,7 +468,7 @@ main {
   margin-top: 20px;
 }
 @media (min-width: 420px) {
-  .bento { grid-template-columns: 1fr 1fr 1fr; }
+  .bento { grid-template-columns: 1fr 1fr; }
 }
 
 .bento-card {

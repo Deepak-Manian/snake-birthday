@@ -132,8 +132,16 @@ function triggerLevelUp() {
   showLevelUpBanner(level, () => {
     level++;
     levelPoints = 0;
+    
+    // Reset snake length so extreme growth only happens after Level 38
+    snake = [
+      { x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }
+    ];
+    dir = { x: 1, y: 0 };
+    nextDir = { x: 1, y: 0 };
+    
     updateHUD();
-    const quote = getQuoteForLevel(level - 1);
+    const quote = getQuoteForLevel();
     
     // Hide overlay before showing quote screen
     hideOverlay();
@@ -366,21 +374,29 @@ function showQuote(quote, cb) {
   quoteBox.classList.remove('hidden');
   quoteBox.classList.add('visible');
   
-  // Auto-dismiss after 4s or on click
+  // Wait for clear user action (click/tap) to dismiss
   const dismiss = () => {
     quoteBox.classList.remove('visible');
     quoteBox.classList.add('hidden');
+    
+    // Re-bind click event cleanly in case they clicked
+    quoteBox.removeEventListener('click', dismiss);
+    document.removeEventListener('keydown', dismissKey);
+    
     setTimeout(cb, 300);
   };
   
-  quoteBox._dismissTimer = setTimeout(dismiss, 4000);
-  quoteBox._dismiss = dismiss;
+  const dismissKey = (e) => {
+    if (e.key === ' ' || e.key === 'Enter') dismiss();
+  };
+  
+  quoteBox.addEventListener('click', dismiss);
+  document.addEventListener('keydown', dismissKey);
 }
 
 function hideQuote() {
   quoteBox.classList.add('hidden');
   quoteBox.classList.remove('visible');
-  if (quoteBox._dismissTimer) clearTimeout(quoteBox._dismissTimer);
 }
 
 // ─── Overlay ──────────────────────────────────────────────────────────────────
@@ -564,11 +580,6 @@ function bindControls() {
   btnRight.addEventListener('click', () => { unlockAudio(); handleDirection('ArrowRight'); });
   btnStart.addEventListener('click', () => { unlockAudio(); handleStart(); });
   btnSelect.addEventListener('click', () => { unlockAudio(); handleSelect(); });
-
-  // Quote dismiss on click
-  quoteBox.addEventListener('click', () => {
-    if (quoteBox._dismiss) quoteBox._dismiss();
-  });
 }
 
 function handleDirection(key) {

@@ -174,6 +174,13 @@ export const QUOTES = [
   }
 ];
 
-export function getQuoteForLevel(level) {
-  return QUOTES[(level - 1) % QUOTES.length];
+let shuffledQuotes = [];
+let quoteIndex = 0;
+
+export function getQuoteForLevel() {
+  if (shuffledQuotes.length === 0 || quoteIndex >= shuffledQuotes.length) {
+    shuffledQuotes = [...QUOTES].sort(() => Math.random() - 0.5);
+    quoteIndex = 0;
+  }
+  return shuffledQuotes[quoteIndex++];
 }
