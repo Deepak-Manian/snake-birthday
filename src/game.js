@@ -104,6 +104,12 @@ function tick() {
     score += 100 * level;
     levelPoints++;
     foodEaten++;
+    
+    // Snake only grows after level 38 (infinite mode)
+    if (level <= 38) {
+      snake.pop();
+    }
+    
     updateHUD();
     if (level === 38 && levelPoints >= pointsForLevel(level)) {
       // BIRTHDAY — snake ate the cake on level 38!
@@ -132,13 +138,6 @@ function triggerLevelUp() {
   showLevelUpBanner(level, () => {
     level++;
     levelPoints = 0;
-    
-    // Reset snake length so extreme growth only happens after Level 38
-    snake = [
-      { x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }
-    ];
-    dir = { x: 1, y: 0 };
-    nextDir = { x: 1, y: 0 };
     
     updateHUD();
     const quote = getQuoteForLevel();
@@ -533,15 +532,62 @@ function updateHUD() {
   scoreEl.textContent = fmtScore(score);
   levelEl.textContent = level > 38 ? '∞' : String(level).padStart(2, '0');
   
+  const unlockLabel = document.getElementById('nextUnlockLabel');
+  
   if (level > 38) {
-    achieveText.textContent = `INFINITE RUN — ${foodEaten} EATEN`;
+    // Infinite mode
+    achieveText.textContent = `∞ SURVIVAL — ${snake.length} SEGMENTS`;
     achieveBar.style.width = '100%';
-    const unlockLabel = document.getElementById('nextUnlockLabel');
-    if (unlockLabel) unlockLabel.textContent = 'SURVIVAL';
+    if (unlockLabel) unlockLabel.innerHTML = '<span class="obj-dot"></span> MODE: INFINITE GROWTH';
   } else {
-    achieveText.textContent = `LVL ${level} — ${foodEaten} EATEN`;
-    const pct = Math.min(100, (level / 38) * 100);
+    // Journey mode — creative level messages
+    const journeyMessages = [
+      'THE JOURNEY BEGINS',       // 1
+      'FINDING YOUR PATH',        // 2-5
+      'BUILDING MOMENTUM',        // 6-10
+      'THE GRIND IS REAL',        // 11-15
+      'HALFWAY THERE',            // 16-20
+      'NO TURNING BACK',          // 21-25
+      'ALMOST LEGENDARY',         // 26-30
+      'THE FINAL STRETCH',        // 31-35
+      'DESTINY AWAITS',           // 36-37
+      'THE CAKE IS HERE'          // 38
+    ];
+    
+    let msgIdx = 0;
+    if (level >= 38)      msgIdx = 9;
+    else if (level >= 36) msgIdx = 8;
+    else if (level >= 31) msgIdx = 7;
+    else if (level >= 26) msgIdx = 6;
+    else if (level >= 21) msgIdx = 5;
+    else if (level >= 16) msgIdx = 4;
+    else if (level >= 11) msgIdx = 3;
+    else if (level >= 6)  msgIdx = 2;
+    else if (level >= 2)  msgIdx = 1;
+    
+    achieveText.textContent = journeyMessages[msgIdx];
+    
+    const pct = Math.min(100, ((level - 1) / 37) * 100);
     achieveBar.style.width = pct + '%';
+    
+    // Light up milestones
+    document.querySelectorAll('.milestone').forEach(m => {
+      const ml = parseInt(m.dataset.level);
+      if (level >= ml) {
+        m.classList.add('reached');
+      } else {
+        m.classList.remove('reached');
+      }
+    });
+    
+    if (unlockLabel) {
+      const remaining = 38 - level;
+      if (remaining <= 0) {
+        unlockLabel.innerHTML = '<span class="obj-dot"></span> 🎂 BIRTHDAY UNLOCKED';
+      } else {
+        unlockLabel.innerHTML = `<span class="obj-dot"></span> ${remaining} LEVEL${remaining > 1 ? 'S' : ''} TO THE CAKE`;
+      }
+    }
   }
   
   if (score > highScore) {

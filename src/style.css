@@ -459,59 +459,130 @@ main {
   letter-spacing: 2px;
 }
 
-/* ─── Stats Bento ────────────────────────────────────────────────────────────── */
-.bento {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
+/* ─── Journey Tracker ────────────────────────────────────────────────────────── */
+.journey-section {
   width: 100%;
-  margin-top: 20px;
-}
-@media (min-width: 420px) {
-  .bento { grid-template-columns: 1fr 1fr; }
-}
-
-.bento-card {
+  margin-top: 24px;
+  padding: 20px 16px;
   background: var(--surface-low);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-left: 4px solid;
+  border: 1px solid var(--surface-top);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
 }
-.bento-card:nth-child(1) { border-color: var(--primary); }
-.bento-card:nth-child(2) { border-color: var(--secondary); }
-.bento-card:nth-child(3) { border-color: var(--tertiary); }
+.journey-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary), var(--tertiary));
+}
 
-.bento-label {
+.journey-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.journey-icon { font-size: 18px; }
+.journey-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--primary);
+  letter-spacing: 1px;
+}
+
+.journey-bar-wrap {
+  position: relative;
+  height: 8px;
+  background: var(--surface-top);
+  border-radius: 4px;
+  overflow: visible;
+  margin-bottom: 8px;
+}
+.journey-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+.journey-bar-glow {
+  position: absolute;
+  top: -3px; right: -2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--secondary);
+  box-shadow: 0 0 12px var(--secondary), 0 0 24px rgba(255, 107, 152, 0.4);
+  animation: float-pulse 1.5s ease-in-out infinite;
+}
+
+.journey-milestones {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  top: 6px;
+  padding: 0 2px;
+}
+.milestone {
   font-family: 'Press Start 2P', monospace;
   font-size: 7px;
   color: var(--on-muted);
-  text-transform: uppercase;
+  opacity: 0.5;
+  transition: opacity 0.3s, color 0.3s;
 }
-.bento-val {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: clamp(13px, 3vw, 16px);
-  color: var(--on-surface);
+.milestone.reached {
+  color: var(--primary);
+  opacity: 1;
 }
-.status-dot {
-  display: inline-block;
-  width: 10px; height: 10px;
-  background: var(--primary);
-  margin-right: 8px;
-  animation: blink 1.2s step-end infinite;
+.cake-milestone {
+  font-size: 12px;
+  opacity: 0.7;
 }
-.achieve-bar-wrap { height: 4px; background: var(--surface-top); margin-top: 4px; }
-#achieveBar {
-  height: 100%;
-  background: var(--secondary);
-  width: 0%;
-  transition: width 0.5s ease;
+.cake-milestone.reached {
+  opacity: 1;
+  animation: float-pulse 1s ease-in-out infinite;
 }
 
-/* ─── Bottom Nav ─────────────────────────────────────────────────────────────── */
-/* Removed Bottom Nav */
+.journey-objective {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--secondary);
+  letter-spacing: 0.5px;
+}
+.obj-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--secondary);
+  border-radius: 50%;
+  animation: blink 1.5s step-end infinite;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────────── */
+.game-footer {
+  width: 100%;
+  padding: 24px 0 12px;
+  text-align: center;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  color: var(--on-muted);
+  letter-spacing: 1px;
+}
+.game-footer a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  transition: color 0.2s, text-shadow 0.2s;
+}
+.game-footer a:hover {
+  color: var(--secondary);
+  text-shadow: 0 0 8px var(--secondary);
+}
 
 /* ─── Keyframe Animations ─────────────────────────────────────────────────────── */
 @keyframes blink {
