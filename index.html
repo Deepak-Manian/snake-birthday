@@ -109,18 +109,33 @@
     </div>
   </div>
 
-  <!-- ─── Stats Bento ────────────────────────────────────────────────── -->
-  <div class="bento">
-    <div class="bento-card">
-      <span class="bento-label">Session Progress</span>
-      <div class="bento-val" id="achieveText">LEVEL 1 — 0 EATEN</div>
-      <div class="achieve-bar-wrap"><div id="achieveBar"></div></div>
+  <!-- ─── Journey Tracker ────────────────────────────────────────────── -->
+  <div class="journey-section">
+    <div class="journey-header">
+      <span class="journey-icon">🛤️</span>
+      <span class="journey-title" id="achieveText">THE JOURNEY BEGINS</span>
     </div>
-    <div class="bento-card">
-      <span class="bento-label">Current Objective</span>
-      <div class="bento-val" id="nextUnlockLabel">AGE 38 UNLOCK</div>
+    <div class="journey-bar-wrap">
+      <div class="journey-bar" id="achieveBar">
+        <div class="journey-bar-glow"></div>
+      </div>
+      <div class="journey-milestones">
+        <span class="milestone" data-level="1">1</span>
+        <span class="milestone" data-level="10">10</span>
+        <span class="milestone" data-level="20">20</span>
+        <span class="milestone" data-level="30">30</span>
+        <span class="milestone cake-milestone" data-level="38">🎂</span>
+      </div>
+    </div>
+    <div class="journey-objective" id="nextUnlockLabel">
+      <span class="obj-dot"></span> OBJECTIVE: REACH AGE 38
     </div>
   </div>
+
+  <!-- ─── Footer ────────────────────────────────────────────────────── -->
+  <footer class="game-footer">
+    <span>made with 🖤 by <a href="https://www.linkedin.com/in/deepak-manian-/" target="_blank" rel="noopener noreferrer">deepak</a></span>
+  </footer>
 
 </main>
 
