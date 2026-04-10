@@ -4,19 +4,6 @@ A custom Snake game built as a birthday gift. The player navigates through 37 le
 
 ---
 
-## 🚀 Deploy to Cloudflare Pages
-
-1. Go to [Cloudflare Pages](https://pages.cloudflare.com/)
-2. Click **"Create a project"** → **"Upload assets"** (direct upload)
-3. Drag the **entire `snake-birthday` folder** (all files inside it)
-4. Give it a project name (e.g. `player-one-birthday`)
-5. Click **Deploy**
-6. Share the link — it'll be something like `player-one-birthday.pages.dev`
-
-That's it. No build step needed. Pure static files.
-
----
-
 ## ✏️ Add Your Personal Message
 
 Open `src/game.js` and find this section (around line 130):
