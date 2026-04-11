@@ -19,6 +19,26 @@
 <!-- Confetti Layer (over everything) -->
 <div id="confettiContainer"></div>
 
+<!-- Mode Select Modal (full-screen, shown on load) -->
+<div id="modeSelectModal">
+  <div class="mode-select-screen">
+    <div class="mode-title">SELECT MODE</div>
+    <div class="mode-subtitle">WHO ARE YOU PLAYING AS?</div>
+    <div class="mode-cards">
+      <button class="mode-card mode-card--birthday" onclick="window.selectMode('birthday')">
+        <div class="mode-card-icon">🎂</div>
+        <div class="mode-card-name">BIRTHDAY</div>
+        <div class="mode-card-desc">38 levels to the<br>big surprise.<br>No checkpoints.</div>
+      </button>
+      <button class="mode-card mode-card--classic" onclick="window.selectMode('classic')">
+        <div class="mode-card-icon">🕹️</div>
+        <div class="mode-card-name">CLASSIC</div>
+        <div class="mode-card-desc">3 hearts per level.<br>Checkpoints saved.<br>Quotes after levels.</div>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── Top Nav ──────────────────────────────────────────────────────────── -->
 <nav class="top-nav">
   <div class="nav-logo">
@@ -33,12 +53,19 @@
 <!-- ─── Main ──────────────────────────────────────────────────────────────── -->
 <main>
 
-  <!-- HUD (Moved outside of game screen) -->
+  <!-- HUD -->
   <div class="hud">
     <div class="hud-block">
       <span class="hud-label">SCORE</span>
       <span class="hud-val" id="scoreVal">000000</span>
     </div>
+
+    <!-- Hearts — only visible in Classic mode, toggled by JS -->
+    <div class="hud-block" id="heartsBlock" style="display:none; align-items:center;">
+      <span class="hud-label">LIVES</span>
+      <span class="hud-val" id="heartsVal" style="color:var(--secondary);letter-spacing:2px;">♥♥♥</span>
+    </div>
+
     <div class="hud-block" style="align-items:flex-end">
       <span class="hud-label">HIGH SCORE</span>
       <span class="hud-val hi" id="highScoreVal">000000</span>
@@ -113,7 +140,7 @@
   <div class="journey-section">
     <div class="journey-header">
       <span class="journey-icon">🛤️</span>
-      <span class="journey-title" id="achieveText">THE JOURNEY BEGINS</span>
+      <span class="journey-title" id="achieveText">SELECT A MODE TO BEGIN</span>
     </div>
     <div class="journey-bar-wrap">
       <div class="journey-bar" id="achieveBar">
@@ -128,7 +155,7 @@
       </div>
     </div>
     <div class="journey-objective" id="nextUnlockLabel">
-      <span class="obj-dot"></span> OBJECTIVE: REACH AGE 38
+      <span class="obj-dot"></span> CHOOSE YOUR MODE ABOVE
     </div>
   </div>
 
