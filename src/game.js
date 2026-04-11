@@ -533,14 +533,26 @@ function tick() {
       snake.pop(); // no growth this tick
     }
 
-    updateHUD();
-
+    const reachedLevelTarget = levelPoints >= pointsForLevel(level);
     const isBirthdayCake = gameMode === 'birthday' && level === BIRTHDAY_LEVELS;
-    if (isBirthdayCake && levelPoints >= pointsForLevel(level)) {
+
+    if (isBirthdayCake && reachedLevelTarget) {
+      updateHUD();
       setTimeout(triggerBirthday, 200);
-    } else if (levelPoints >= pointsForLevel(level)) {
-      setTimeout(triggerLevelUp, 100);
+    } else if (reachedLevelTarget) {
+      if (gameMode === 'birthday') {
+        // Keep birthday progression seamless: no pause/restart between cakes.
+        level++;
+        levelPoints = 0;
+        activeStepInterval = intervalForLevel(level);
+        updateHUD();
+        spawnFood();
+      } else {
+        updateHUD();
+        setTimeout(triggerLevelUp, 100);
+      }
     } else {
+      updateHUD();
       spawnFood();
     }
   } else {
