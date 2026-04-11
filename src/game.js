@@ -290,6 +290,7 @@ function getQuoteForLevel() {
 // ─── Constants ───────────────────────────────────────────────────────────────
 const GRID = 20;
 const BASE_INTERVAL = 180;
+const MAX_FRAME_DELTA = 100;
 const BIRTHDAY_LEVELS = 38; // levels 1–37 normal, level 38 = cake finale
 
 function pointsForLevel(level) {
@@ -308,16 +309,19 @@ function intervalForLevel(level) {
 let gameMode = null;
 
 // ─── State ───────────────────────────────────────────────────────────────────
-let snake, dir, nextDir, food, score, highScore, level, levelPoints;
-let foodEaten, gameLoop, gameState, cellSize;
+let snake, previousSnake, dir, previousDir, nextDir, food, score, highScore, level, levelPoints;
+let foodEaten, gameLoop, gameState, cellSize, stepAccumulator, lastFrameTime, activeStepInterval;
 let hearts, checkpointSnake, checkpointScore, checkpointLevel;
 let growthAccum = 0; // fractional growth accumulator
+let boardBuffer = null;
+let boardCtx = null;
 // gameState: 'menu' | 'idle' | 'playing' | 'paused' | 'levelup' | 'quote'
 //            | 'birthday' | 'glitch' | 'snakewish' | 'message' | 'dead'
 
 // ─── DOM refs ────────────────────────────────────────────────────────────────
 const canvas        = document.getElementById('gameCanvas');
-const ctx           = canvas.getContext('2d');
+const ctx           = canvas.getContext('2d', { alpha: false, desynchronized: true }) || canvas.getContext('2d');
+const hud           = document.getElementById('hud');
 const scoreEl       = document.getElementById('scoreVal');
 const highScoreEl   = document.getElementById('highScoreVal');
 const levelEl       = document.getElementById('levelVal');
@@ -325,6 +329,8 @@ const heartsEl      = document.getElementById('heartsVal');
 const heartsBlock   = document.getElementById('heartsBlock');
 const achieveBar    = document.getElementById('achieveBar');
 const achieveText   = document.getElementById('achieveText');
+const milestones    = [...document.querySelectorAll('.milestone')];
+const unlockLabel   = document.getElementById('nextUnlockLabel');
 const overlay       = document.getElementById('overlay');
 const overlayInner  = document.getElementById('overlayInner');
 const quoteBox      = document.getElementById('quoteBox');
@@ -336,8 +342,13 @@ const btnStart      = document.getElementById('btnStart');
 
 // ─── Init ─────────────────────────────────────────────────────────────────
 function init() {
+  ctx.imageSmoothingEnabled = false;
   highScore = parseInt(localStorage.getItem('snakeHS') || '0');
   highScoreEl.textContent = fmtScore(highScore);
+  gameLoop = null;
+  stepAccumulator = 0;
+  lastFrameTime = 0;
+  activeStepInterval = BASE_INTERVAL;
   gameState = 'menu';
   resizeCanvas();
   showModeSelect();
@@ -353,7 +364,81 @@ function resizeCanvas() {
   const size = Math.min(container.clientWidth, container.clientHeight || container.clientWidth);
   canvas.width = size;
   canvas.height = size;
-  cellSize = Math.floor(size / GRID);
+  cellSize = size / GRID;
+  ensureBoardBuffer(size);
+}
+
+function ensureBoardBuffer(size) {
+  if (!boardBuffer) {
+    boardBuffer = document.createElement('canvas');
+    boardCtx = boardBuffer.getContext('2d', { alpha: false }) || boardBuffer.getContext('2d');
+  }
+
+  if (boardBuffer.width !== size || boardBuffer.height !== size) {
+    boardBuffer.width = size;
+    boardBuffer.height = size;
+  }
+
+  renderBoardBuffer();
+}
+
+function renderBoardBuffer() {
+  if (!boardCtx) return;
+  boardCtx.clearRect(0, 0, boardBuffer.width, boardBuffer.height);
+  boardCtx.fillStyle = '#000';
+  boardCtx.fillRect(0, 0, boardBuffer.width, boardBuffer.height);
+  drawGrid(boardCtx, boardBuffer.width, boardBuffer.height);
+}
+
+function cloneSnakeState(segments = []) {
+  return segments.map(seg => ({ x: seg.x, y: seg.y }));
+}
+
+function syncRenderState() {
+  previousSnake = cloneSnakeState(snake);
+  previousDir = { ...dir };
+  stepAccumulator = 0;
+}
+
+function stopLoop() {
+  if (gameLoop !== null) {
+    cancelAnimationFrame(gameLoop);
+    gameLoop = null;
+  }
+  lastFrameTime = 0;
+  stepAccumulator = 0;
+}
+
+function frameLoop(timestamp) {
+  if (gameState !== 'playing') {
+    gameLoop = null;
+    return;
+  }
+
+  if (!lastFrameTime) lastFrameTime = timestamp;
+  const delta = Math.min(timestamp - lastFrameTime, MAX_FRAME_DELTA);
+  lastFrameTime = timestamp;
+  stepAccumulator += delta;
+
+  while (stepAccumulator >= activeStepInterval && gameState === 'playing') {
+    previousSnake = cloneSnakeState(snake);
+    previousDir = { ...dir };
+    tick();
+    stepAccumulator -= activeStepInterval;
+  }
+
+  if (gameState === 'playing') {
+    const alpha = activeStepInterval > 0 ? Math.min(stepAccumulator / activeStepInterval, 1) : 1;
+    draw(timestamp, alpha);
+    gameLoop = requestAnimationFrame(frameLoop);
+  } else {
+    gameLoop = null;
+  }
+}
+
+function applyModeUI() {
+  if (hud) hud.classList.toggle('hud--birthday', gameMode === 'birthday');
+  if (heartsBlock) heartsBlock.style.display = gameMode === 'classic' ? 'flex' : 'none';
 }
 
 // ─── Mode Selection ───────────────────────────────────────────────────────
@@ -361,7 +446,7 @@ const modeModal = document.getElementById('modeSelectModal');
 
 function showModeSelect() {
   gameState = 'menu';
-  if (heartsBlock) heartsBlock.style.display = 'none';
+  applyModeUI();
   if (modeModal) modeModal.classList.remove('hidden');
   drawIdle();
 }
@@ -371,14 +456,14 @@ window.selectMode = function(mode) {
   Sounds.select();
   gameMode = mode;
   if (modeModal) modeModal.classList.add('hidden');
-  if (heartsBlock) heartsBlock.style.display = mode === 'classic' ? 'flex' : 'none';
+  applyModeUI();
   gameState = 'idle';
   drawIdle();
 };
 
 // ─── Game Start / Reset ───────────────────────────────────────────────────
 function startGame() {
-  clearInterval(gameLoop);
+  stopLoop();
   snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
   dir      = { x: 1, y: 0 };
   nextDir  = { x: 1, y: 0 };
@@ -396,6 +481,7 @@ function startGame() {
     updateHeartsDisplay();
   }
 
+  syncRenderState();
   gameState = 'playing';
   updateHUD();
   spawnFood();
@@ -405,8 +491,11 @@ function startGame() {
 }
 
 function scheduleLoop() {
-  clearInterval(gameLoop);
-  gameLoop = setInterval(tick, intervalForLevel(level));
+  stopLoop();
+  activeStepInterval = intervalForLevel(level);
+  syncRenderState();
+  draw(performance.now(), 1);
+  gameLoop = requestAnimationFrame(frameLoop);
 }
 
 // ─── Tick ────────────────────────────────────────────────────────────────────
@@ -458,13 +547,11 @@ function tick() {
     snake.pop();
     if (foodEaten % 3 === 0) Sounds.move();
   }
-
-  draw();
 }
 
 // ─── Level Up Flow ────────────────────────────────────────────────────────
 function triggerLevelUp() {
-  clearInterval(gameLoop);
+  stopLoop();
   gameState = 'levelup';
 
   if (gameMode === 'birthday') {
@@ -519,7 +606,7 @@ function showLevelUpBanner(completedLevel, cb) {
 
 // ─── Classic: Hearts / Respawn ────────────────────────────────────────────
 function loseHeart() {
-  clearInterval(gameLoop);
+  stopLoop();
   Sounds.die();
   hearts--;
   updateHeartsDisplay();
@@ -564,6 +651,7 @@ function respawnAtLevelStart() {
   nextDir     = { x: 1, y: 0 };
   levelPoints = 0;
   gameState   = 'playing';
+  syncRenderState();
   updateHUD();
   spawnFood();
   scheduleLoop();
@@ -580,6 +668,7 @@ window.restoreCheckpoint = function() {
   hearts = 3;
   updateHeartsDisplay();
   gameState = 'playing';
+  syncRenderState();
   updateHUD();
   spawnFood();
   scheduleLoop();
@@ -593,7 +682,7 @@ function updateHeartsDisplay() {
 
 // ─── Birthday: Death ─────────────────────────────────────────────────────
 function die() {
-  clearInterval(gameLoop);
+  stopLoop();
   gameState = 'dead';
   Sounds.die();
 
@@ -616,7 +705,7 @@ function die() {
 
 // ─── Birthday Sequence ─────────────────────────────────────────────────────
 function triggerBirthday() {
-  clearInterval(gameLoop);
+  stopLoop();
   gameState = 'birthday';
   Sounds.birthday();
   startConfetti();
@@ -802,8 +891,6 @@ function updateHUD() {
     levelEl.textContent = String(level).padStart(2, '0');
   }
 
-  const unlockLabel = document.getElementById('nextUnlockLabel');
-
   if (gameMode === 'birthday') {
     if (level > BIRTHDAY_LEVELS) {
       achieveText.textContent = `∞ SURVIVAL — ${snake.length} SEGMENTS`;
@@ -821,7 +908,7 @@ function updateHUD() {
       achieveText.textContent = msgs[idx];
       achieveBar.style.width = Math.min(100, ((level - 1) / 37) * 100) + '%';
 
-      document.querySelectorAll('.milestone').forEach(m => {
+      milestones.forEach(m => {
         m.classList.toggle('reached', level >= parseInt(m.dataset.level));
       });
 
@@ -838,7 +925,7 @@ function updateHUD() {
     achieveText.textContent = `LEVEL ${level} — EAT ${need} MORE`;
     achieveBar.style.width = Math.min(100, (levelPoints / pointsForLevel(level)) * 100) + '%';
 
-    document.querySelectorAll('.milestone').forEach(m => {
+    milestones.forEach(m => {
       m.classList.toggle('reached', level >= parseInt(m.dataset.level));
     });
 
@@ -966,7 +1053,7 @@ function handleStart() {
 function handleSelect() {
   if (gameState === 'playing') {
     gameState = 'paused';
-    clearInterval(gameLoop);
+    stopLoop();
     Sounds.pause();
     showOverlay(`<div class="pause-screen"><div class="pause-title">PAUSED</div><div class="pause-sub">PRESS SELECT TO RESUME</div></div>`);
   } else if (gameState === 'paused') {
@@ -986,14 +1073,11 @@ window.restartGame = function() {
 
 window.backToMenu = function() {
   stopConfetti();
-  clearInterval(gameLoop);
+  stopLoop();
   hideOverlay();
   hideQuote();
   gameMode = null;
-  gameState = 'menu';
-  if (heartsBlock) heartsBlock.style.display = 'none';
-  if (modeModal) modeModal.classList.remove('hidden');
-  drawIdle();
+  showModeSelect();
 };
 
 window.continueGame = function() {
@@ -1076,10 +1160,7 @@ function hideOverlay() {
 // ─── Drawing ──────────────────────────────────────────────────────────────────
 function drawIdle() {
   resizeCanvas();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
+  drawBoard();
   ctx.fillStyle = '#a0ffc3';
   ctx.font = `bold ${Math.floor(cellSize * 0.7)}px 'Press Start 2P', monospace`;
   ctx.textAlign = 'center';
@@ -1089,28 +1170,66 @@ function drawIdle() {
   ctx.fillText('TO PLAY', canvas.width / 2, canvas.height * 0.55);
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  drawGrid();
-  drawFood();
-  drawSnake();
+function draw(frameTime = performance.now(), alpha = 1) {
+  drawBoard();
+  drawFood(frameTime);
+  drawSnake(alpha);
 }
 
-function drawGrid() {
-  ctx.strokeStyle = 'rgba(160,255,195,0.04)';
-  ctx.lineWidth = 1;
+function drawBoard() {
+  if (boardBuffer) {
+    ctx.drawImage(boardBuffer, 0, 0);
+    return;
+  }
+
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawGrid(ctx, canvas.width, canvas.height);
+}
+
+function drawGrid(targetCtx = ctx, width = canvas.width, height = canvas.height) {
+  targetCtx.strokeStyle = 'rgba(160,255,195,0.04)';
+  targetCtx.lineWidth = 1;
   for (let i = 0; i <= GRID; i++) {
-    ctx.beginPath(); ctx.moveTo(i * cellSize, 0); ctx.lineTo(i * cellSize, canvas.height); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, i * cellSize); ctx.lineTo(canvas.width, i * cellSize); ctx.stroke();
+    targetCtx.beginPath();
+    targetCtx.moveTo(i * cellSize, 0);
+    targetCtx.lineTo(i * cellSize, height);
+    targetCtx.stroke();
+    targetCtx.beginPath();
+    targetCtx.moveTo(0, i * cellSize);
+    targetCtx.lineTo(width, i * cellSize);
+    targetCtx.stroke();
   }
 }
 
-function drawSnake() {
+function interpolateAxis(from, to, alpha) {
+  let delta = to - from;
+  if (delta > GRID / 2) delta -= GRID;
+  if (delta < -GRID / 2) delta += GRID;
+
+  const value = from + delta * alpha;
+  return ((value % GRID) + GRID) % GRID;
+}
+
+function getInterpolatedSegment(index, alpha) {
+  const current = snake[index];
+  if (!current) return null;
+
+  const fallback = previousSnake?.[previousSnake.length - 1] || current;
+  const previous = previousSnake?.[index] || fallback;
+
+  return {
+    x: interpolateAxis(previous.x, current.x, alpha),
+    y: interpolateAxis(previous.y, current.y, alpha),
+  };
+}
+
+function drawSnake(alpha = 1) {
+  const renderDir = alpha < 1 && previousDir ? previousDir : dir;
   snake.forEach((seg, i) => {
     const isHead = i === 0;
-    const x = seg.x * cellSize, y = seg.y * cellSize;
+    const interpolated = getInterpolatedSegment(i, alpha) || seg;
+    const x = interpolated.x * cellSize, y = interpolated.y * cellSize;
     if (isHead) {
       ctx.fillStyle = '#00fc9b';
       ctx.shadowColor = 'rgba(160,255,195,0.8)';
@@ -1119,13 +1238,13 @@ function drawSnake() {
       ctx.shadowBlur = 0;
       ctx.fillStyle = '#000';
       const es = 3;
-      if      (dir.x ===  1) { ctx.fillRect(x+cellSize-6, y+4, es, es); ctx.fillRect(x+cellSize-6, y+cellSize-7, es, es); }
-      else if (dir.x === -1) { ctx.fillRect(x+3, y+4, es, es);         ctx.fillRect(x+3, y+cellSize-7, es, es); }
-      else if (dir.y === -1) { ctx.fillRect(x+4, y+3, es, es);         ctx.fillRect(x+cellSize-7, y+3, es, es); }
-      else                   { ctx.fillRect(x+4, y+cellSize-6, es, es); ctx.fillRect(x+cellSize-7, y+cellSize-6, es, es); }
+      if      (renderDir.x ===  1) { ctx.fillRect(x+cellSize-6, y+4, es, es); ctx.fillRect(x+cellSize-6, y+cellSize-7, es, es); }
+      else if (renderDir.x === -1) { ctx.fillRect(x+3, y+4, es, es);         ctx.fillRect(x+3, y+cellSize-7, es, es); }
+      else if (renderDir.y === -1) { ctx.fillRect(x+4, y+3, es, es);         ctx.fillRect(x+cellSize-7, y+3, es, es); }
+      else                         { ctx.fillRect(x+4, y+cellSize-6, es, es); ctx.fillRect(x+cellSize-7, y+cellSize-6, es, es); }
     } else {
-      const alpha = Math.max(0.3, 1 - i * 0.04);
-      ctx.fillStyle = `rgba(160,255,195,${alpha})`;
+      const segmentAlpha = Math.max(0.3, 1 - i * 0.04);
+      ctx.fillStyle = `rgba(160,255,195,${segmentAlpha})`;
       ctx.shadowColor = 'rgba(160,255,195,0.3)';
       ctx.shadowBlur = 6;
       ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
@@ -1137,9 +1256,9 @@ function drawSnake() {
   });
 }
 
-function drawFood() {
+function drawFood(frameTime = performance.now()) {
   const x = food.x * cellSize, y = food.y * cellSize;
-  const pulse = Math.sin(Date.now() / 500) * 0.15 + 0.85;
+  const pulse = Math.sin(frameTime / 500) * 0.15 + 0.85;
   ctx.save();
   ctx.globalAlpha = pulse;
   ctx.fillStyle = '#ff6b98';
