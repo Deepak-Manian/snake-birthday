@@ -91,7 +91,7 @@ html, body {
 main {
   max-width: 480px;
   margin: 0 auto;
-  padding: 16px 12px 100px;
+  padding: 16px 12px 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -136,16 +136,15 @@ main {
 .hud-val.hi { color: var(--secondary); }
 
 .level-badge {
-  position: absolute;
-  top: 6px; left: 50%; transform: translateX(-50%);
+  width: 100%;
   background: var(--secondary);
   color: #000;
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
-  padding: 4px 10px;
-  z-index: 20;
-  pointer-events: none;
+  font-size: 9px;
+  padding: 5px 0;
+  text-align: center;
   white-space: nowrap;
+  letter-spacing: 1px;
 }
 
 /* ─── Overlay (Level Up / Birthday / Dead / Pause) ───────────────────────────── */
@@ -394,69 +393,96 @@ main {
   overflow: hidden;
 }
 
-/* ─── Controls ───────────────────────────────────────────────────────────────── */
-.controls-section {
+/* ─── Controls Row ───────────────────────────────────────────────────────────── */
+.controls-row {
   width: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  margin-top: 20px;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
 }
 
-.dpad {
-  display: grid;
-  grid-template-columns: repeat(3, 56px);
-  grid-template-rows: repeat(3, 56px);
-  gap: 4px;
-}
-
-.dpad-btn {
+/* Icon buttons (⏸ / ▶) */
+.ctrl-icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--surface-high);
-  border: none;
-  border-bottom: 4px solid var(--surface-top);
-  color: var(--primary);
-  font-family: 'Material Symbols Outlined';
-  font-size: 24px;
+  border: 1px solid var(--surface-top);
+  border-bottom: 3px solid var(--outline);
+  color: var(--on-muted);
+  font-size: 22px;
   cursor: pointer;
-  transition: transform 0.08s, border-bottom-width 0.08s;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-user-select: none; user-select: none;
+  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.1s;
+  flex-shrink: 0;
 }
-.dpad-btn:active {
-  transform: translateY(3px);
+.ctrl-icon-btn:hover {
+  color: var(--primary);
+  border-color: rgba(160,255,195,0.3);
+  box-shadow: 0 0 12px rgba(160,255,195,0.15);
+}
+.ctrl-icon-btn:active {
+  transform: translateY(2px);
   border-bottom-width: 1px;
 }
-.dpad-center { grid-column: 2; grid-row: 2; }
+.ctrl-icon-btn--start {
+  color: var(--primary);
+}
+.ctrl-icon-btn--start:hover {
+  color: var(--secondary);
+  border-color: rgba(255,107,152,0.3);
+  box-shadow: 0 0 12px rgba(255,107,152,0.2);
+}
 
-.action-btns {
-  display: flex;
-  gap: 40px;
-  align-items: center;
-}
-.action-btn-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.action-btn {
-  width: 52px;
-  height: 18px;
-  background: rgba(71,71,78,0.4);
-  border: none;
-  border-radius: 0;
-  transform: rotate(-15deg);
-  cursor: pointer;
-  transition: transform 0.08s, filter 0.08s;
-}
-.action-btn:active { filter: brightness(1.5); transform: rotate(-15deg) scale(0.92); }
-.action-label {
+/* Touch hint — shown on touch devices */
+.touch-hint {
+  display: none;
   font-family: 'Press Start 2P', monospace;
   font-size: 7px;
-  color: var(--outline);
-  text-transform: uppercase;
-  letter-spacing: 2px;
+  color: var(--primary);
+  gap: 6px;
+  align-items: center;
+  opacity: 0.6;
+  letter-spacing: 0.5px;
+  padding: 8px 12px;
+  background: var(--surface-low);
+  border: 1px solid rgba(160,255,195,0.08);
+}
+@media (hover: none) and (pointer: coarse) {
+  .touch-hint { display: flex; }
+  .keyboard-hint { display: none !important; }
+}
+
+/* Keyboard hint — shown on desktop */
+.keyboard-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--surface-low);
+  border: 1px solid rgba(160,255,195,0.08);
+}
+.key-cap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: var(--surface-high);
+  border: 1px solid var(--surface-top);
+  border-bottom: 2px solid var(--outline);
+  color: var(--primary);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+}
+.hint-text {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 10px;
+  color: var(--on-muted);
+  margin: 0 3px;
 }
 
 /* ─── Journey Tracker ────────────────────────────────────────────────────────── */
@@ -624,9 +650,7 @@ main {
 
 /* ─── Mobile Touch ───────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  main { padding: 12px 8px 90px; }
-  .dpad-btn { width: 52px; height: 52px; font-size: 22px; }
-  .dpad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); }
+  main { padding: 12px 8px 40px; }
 }
 
 /* ─── Mode Select Screen (full-screen fixed modal) ───────────────────────── */

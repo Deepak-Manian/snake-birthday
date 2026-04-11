@@ -1,5 +1,291 @@
-import { Sounds, unlockAudio } from './sounds.js';
-import { getQuoteForLevel } from './quotes.js';
+// ═══════════════════════════════════════════════════════════════════════════════
+// SOUNDS — Web Audio API sound engine (inlined from sounds.js)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function beep({ frequency = 440, type = 'square', duration = 0.1, volume = 0.3, decay = true }) {
+  try {
+    const ac = getAudioCtx();
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, ac.currentTime);
+    gain.gain.setValueAtTime(volume, ac.currentTime);
+    if (decay) gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+    osc.start(ac.currentTime);
+    osc.stop(ac.currentTime + duration);
+  } catch(e) {}
+}
+
+const Sounds = {
+  move() {
+    beep({ frequency: 220, type: 'square', duration: 0.04, volume: 0.08 });
+  },
+  eat() {
+    beep({ frequency: 523, type: 'square', duration: 0.08, volume: 0.3 });
+    setTimeout(() => beep({ frequency: 659, type: 'square', duration: 0.08, volume: 0.3 }), 80);
+  },
+  levelUp() {
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((f, i) => setTimeout(() => beep({ frequency: f, type: 'square', duration: 0.12, volume: 0.4 }), i * 100));
+  },
+  die() {
+    beep({ frequency: 440, type: 'sawtooth', duration: 0.15, volume: 0.4 });
+    setTimeout(() => beep({ frequency: 330, type: 'sawtooth', duration: 0.15, volume: 0.4 }), 150);
+    setTimeout(() => beep({ frequency: 220, type: 'sawtooth', duration: 0.3, volume: 0.4 }), 300);
+  },
+  birthday() {
+    // Happy birthday melody in 8-bit
+    const melody = [
+      [523, 0], [523, 150], [587, 300], [523, 600], [698, 750], [659, 1050],
+      [523, 1350], [523, 1500], [587, 1650], [523, 1950], [784, 2100], [698, 2400],
+      [523, 2700], [523, 2850], [1047, 3000], [880, 3150], [698, 3450], [659, 3600], [587, 3900],
+      [932, 4200], [932, 4350], [880, 4500], [698, 4800], [784, 4950], [698, 5250],
+    ];
+    melody.forEach(([f, t]) => setTimeout(() => beep({ frequency: f, type: 'square', duration: 0.18, volume: 0.35 }), t));
+  },
+  glitch() {
+    for (let i = 0; i < 8; i++) {
+      setTimeout(() => beep({ 
+        frequency: Math.random() * 800 + 100, 
+        type: 'sawtooth', 
+        duration: 0.05, 
+        volume: 0.2 
+      }), i * 60);
+    }
+  },
+  select() {
+    beep({ frequency: 400, type: 'square', duration: 0.05, volume: 0.2 });
+  },
+  pause() {
+    beep({ frequency: 300, type: 'square', duration: 0.08, volume: 0.25 });
+    setTimeout(() => beep({ frequency: 250, type: 'square', duration: 0.08, volume: 0.25 }), 90);
+  },
+  resume() {
+    beep({ frequency: 250, type: 'square', duration: 0.08, volume: 0.25 });
+    setTimeout(() => beep({ frequency: 300, type: 'square', duration: 0.08, volume: 0.25 }), 90);
+  }
+};
+
+// Unlock audio on first user interaction
+function unlockAudio() {
+  try {
+    const ac = getAudioCtx();
+    if (ac.state === 'suspended') ac.resume();
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// QUOTES — Tamil directors quotes (inlined from quotes.js)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Quotes from Tamil directors — Mysskin, Thiagarajan Kumararaja, Ram
+// Used between levels to add soul to the game
+
+const QUOTES = [
+  {
+    text: "இயற்கை யாரையும் தண்டிப்பதில்லை, அது செயல்படுகிறது அவ்வளவுதான்.",
+    director: "Ram",
+    film: "Peranbu"
+  },
+  {
+    text: "ஒரு பொய் சொல்றதுக்கு தைரியம் வேணும், ஆனா உண்மைய சொல்றதுக்கு அதைவிட பெரிய தைரியம் வேணும்.",
+    director: "Mysskin",
+    film: "Nandalala"
+  },
+  {
+    text: "உலகத்துல பொய் சொல்றது கெட்ட பழக்கம், ஆனா சில இடத்துல பொய் சொன்னா தான் வாழ முடியும்.",
+    director: "Mysskin",
+    film: "Anjathe"
+  },
+  {
+    text: "அன்பு மட்டுமே உலகின் சிறந்த மருந்து.",
+    director: "Ram",
+    film: "Peranbu"
+  },
+  {
+    text: "ஒருத்தன் நல்லவனா கெட்டவனானு முடிவு பண்றது சூழ்நிலை தான்.",
+    director: "Thiagarajan Kumararaja",
+    film: "Aaranya Kaandam"
+  },
+  {
+    text: "ஒருத்தன் என்ன தப்பு பண்றான்னு முக்கியம் இல்ல, அதை யார் பண்றாங்கறது தான் முக்கியம்.",
+    director: "Thiagarajan Kumararaja",
+    film: "Aaranya Kaandam"
+  },
+  {
+    text: "பொம்பளைங்க அழுகுறது இயற்கை, ஆனா ஆம்பளைங்க அழுதா அது வலி.",
+    director: "Mysskin",
+    film: "Pisaasu"
+  },
+  {
+    text: "ஆண்கள் அழுவதில்லை என்று யாரோ பொய் சொல்லி வளர்த்துவிட்டார்கள்.",
+    director: "Ram",
+    film: "Taramani"
+  },
+  {
+    text: "இருட்டுல இருக்கிறவனுக்கு தான் வெளிச்சத்தோட அருமை தெரியும்.",
+    director: "Mysskin",
+    film: "Onaayum Aattukkuttiyum"
+  },
+  {
+    text: "எல்லா தப்புக்கும் ஒரு நியாயம் இருக்கு.",
+    director: "Thiagarajan Kumararaja",
+    film: "Super Deluxe"
+  },
+  {
+    text: "அவமானம் தான் ஒரு மனிதனை அடுத்த கட்டத்திற்கு நகர்த்தும்.",
+    director: "Ram",
+    film: "Kattradhu Thamizh"
+  },
+  {
+    text: "இரவு எவ்வளவு இருட்டாக இருக்கிறதோ, விடியல் அவ்வளவு வெளிச்சமாக இருக்கும்.",
+    director: "Mysskin",
+    film: "Yuddham Sei"
+  },
+  {
+    text: "வாழ்க்கைங்கிறது ஒரு பெரிய கடல், அதுல நாம நீச்சல் கத்துக்குறதுக்குள்ள முழுகிடுவோம்.",
+    director: "Ram",
+    film: "Thanga Meengal"
+  },
+  {
+    text: "மனுஷனா பொறந்தது ரொம்ப கஷ்டம், அதை விட கஷ்டம் மனுஷனா வாழுறது.",
+    director: "Ram",
+    film: "Peranbu"
+  },
+  {
+    text: "ஒரு கொலைகாரனுக்கு தான் உயிரோட அருமை தெரியும்.",
+    director: "Mysskin",
+    film: "Yuddham Sei"
+  },
+  {
+    text: "மனிதர்கள் எப்பவுமே தங்களுக்கு புடிச்ச மாதிரி தான் கடவுள உருவாக்குறாங்க.",
+    director: "Mysskin",
+    film: "Nandalala"
+  },
+  {
+    text: "உண்மையான அன்பு என்னைக்கும் அழியாது, அது வேறொரு வடிவத்துல உருமாறும்.",
+    director: "Mysskin",
+    film: "Pisaasu"
+  },
+  {
+    text: "சத்தியம் எப்பவும் செருப்பு போட்டு வெளிவர முன்னாடி, பொய் உலகத்தையே சுத்தி வந்துரும்.",
+    director: "Mysskin",
+    film: "Thupparivaalan"
+  },
+  {
+    text: "ஒவ்வொரு மனுஷனுக்குள்ளயும் ஏதோ ஒரு பைத்தியக்காரத்தனம் இருக்கு.",
+    director: "Mysskin",
+    film: "Mugamoodi"
+  },
+  {
+    text: "ஒவ்வொரு மனுஷனுக்குள்ளயும் ஒரு நீதிபதி இருக்கான், ஆனா அவனுக்கு தனக்கு சாதகமா மட்டும் தான் தீர்ப்பு குடுக்க தெரியும்.",
+    director: "Thiagarajan Kumararaja",
+    film: "Aaranya Kaandam"
+  },
+  {
+    text: "எது தேவையோ அதுவே தர்மம்.",
+    director: "Thiagarajan Kumararaja",
+    film: "Aaranya Kaandam"
+  },
+  {
+    text: "நாம எல்லாம் வெறும் பொம்மைகள், இது எல்லாமே மேல இருக்கிறவன் போடுற ஸ்கிரிப்ட்.",
+    director: "Thiagarajan Kumararaja",
+    film: "Super Deluxe"
+  },
+  {
+    text: "வாழ்க்கையில எந்த ஒரு விஷயமும் காரணமே இல்லாம நடக்காது.",
+    director: "Thiagarajan Kumararaja",
+    film: "Super Deluxe"
+  },
+  {
+    text: "நமக்கு புடிச்சவங்கள சந்தோசப்படுத்துறது தான் காதல், நம்மள சந்தோசப்படுத்துறது இல்ல.",
+    director: "Thiagarajan Kumararaja",
+    film: "Aaranya Kaandam"
+  },
+  {
+    text: "உண்மையான அன்பை கொடுக்கிறவங்க எப்பவுமே அநாதைகள் தான்.",
+    director: "Ram",
+    film: "Kattradhu Thamizh"
+  },
+  {
+    text: "உலகத்துல எல்லாமே வியாபாரம், அன்பு மட்டும்தான் இலவசம்.",
+    director: "Ram",
+    film: "Thanga Meengal"
+  },
+  {
+    text: "ஆயிரம் பொய்களை விட ஒரு கசப்பான உண்மை எவ்வளவோ மேலானது.",
+    director: "Ram",
+    film: "Taramani"
+  },
+  {
+    text: "இந்த சமூகத்துல நல்லவனா வாழ்றதுக்கு நிறைய தைரியம் வேணும்.",
+    director: "Ram",
+    film: "Peranbu"
+  },
+  {
+    text: "நீ யாரை ரொம்ப நேசிக்கிறியோ, அவங்க தான் உன்னை அதிகமா காயப்படுத்துவாங்க.",
+    director: "Ram",
+    film: "Kattradhu Thamizh"
+  },
+  {
+    text: "நல்லவன் கெட்டவன் எல்லாம் கிடையாது, தேவைக்கு ஏத்த மாதிரி மாறிக்குவாங்க.",
+    director: "Thiagarajan Kumararaja",
+    film: "Aaranya Kaandam"
+  },
+  {
+    text: "கண்ணுக்கு தெரியாத ஒரு விஷயத்தை நம்புறது தான் கடவுள்.",
+    director: "Mysskin",
+    film: "Pisaasu"
+  },
+  {
+    text: "காசுக்காக நடிக்கிறவங்களை விட, பாசத்துக்காக நடிக்கிறவங்க தான் இங்க அதிகம்.",
+    director: "Ram",
+    film: "Taramani"
+  },
+  {
+    text: "ஒரு ஜீவனுக்கு ஆபத்துனா அதை காப்பாத்துறது தான் மனுஷத்தன்மை, அது ஓநாயா இருந்தாலும் சரி.",
+    director: "Mysskin",
+    film: "Onaayum Aattukkuttiyum"
+  },
+  {
+    text: "பசிக்கிறப்போ பிச்சை எடுக்கிறது தப்பு கிடையாது, ஆனா பிச்சை எடுத்த அப்புறம் பசிக்குதுன்னு பொய் சொல்றது தான் தப்பு.",
+    director: "Thiagarajan Kumararaja",
+    film: "Aaranya Kaandam"
+  }
+];
+
+let shuffledQuotes = [];
+let quoteIndex = 0;
+
+function fisherYatesShuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getQuoteForLevel() {
+  if (shuffledQuotes.length === 0 || quoteIndex >= shuffledQuotes.length) {
+    shuffledQuotes = fisherYatesShuffle(QUOTES);
+    quoteIndex = 0;
+  }
+  return shuffledQuotes[quoteIndex++];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GAME ENGINE
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const GRID = 20;
@@ -7,6 +293,9 @@ const BASE_INTERVAL = 180;
 const BIRTHDAY_LEVELS = 38; // levels 1–37 normal, level 38 = cake finale
 
 function pointsForLevel(level) {
+  // Birthday: 1 cake = 1 level (37 quick levels to the surprise)
+  if (gameMode === 'birthday') return 1;
+  // Classic: scaling difficulty
   return level * 3;
 }
 
@@ -22,6 +311,7 @@ let gameMode = null;
 let snake, dir, nextDir, food, score, highScore, level, levelPoints;
 let foodEaten, gameLoop, gameState, cellSize;
 let hearts, checkpointSnake, checkpointScore, checkpointLevel;
+let growthAccum = 0; // fractional growth accumulator
 // gameState: 'menu' | 'idle' | 'playing' | 'paused' | 'levelup' | 'quote'
 //            | 'birthday' | 'glitch' | 'snakewish' | 'message' | 'dead'
 
@@ -41,10 +331,6 @@ const quoteBox      = document.getElementById('quoteBox');
 const quoteText     = document.getElementById('quoteText');
 const quoteDirector = document.getElementById('quoteDirector');
 const quoteFilm     = document.getElementById('quoteFilm');
-const btnUp         = document.getElementById('btnUp');
-const btnDown       = document.getElementById('btnDown');
-const btnLeft       = document.getElementById('btnLeft');
-const btnRight      = document.getElementById('btnRight');
 const btnSelect     = document.getElementById('btnSelect');
 const btnStart      = document.getElementById('btnStart');
 
@@ -100,6 +386,7 @@ function startGame() {
   level       = 1;
   levelPoints = 0;
   foodEaten   = 0;
+  growthAccum = 0;
 
   if (gameMode === 'classic') {
     hearts          = 3;
@@ -132,9 +419,11 @@ function tick() {
     y: (snake[0].y + dir.y + GRID) % GRID
   };
 
+  // Birthday mode: invincible (no self-collision)
+  // Classic mode: self-bite loses a heart
   if (snake.some(s => s.x === head.x && s.y === head.y)) {
-    gameMode === 'classic' ? loseHeart() : die();
-    return;
+    if (gameMode === 'classic') { loseHeart(); return; }
+    // Birthday: just ignore the collision, keep moving
   }
 
   snake.unshift(head);
@@ -144,7 +433,16 @@ function tick() {
     score += 100 * level;
     levelPoints++;
     foodEaten++;
-    snake.pop(); // snake never grows until infinite mode
+
+    // Fractional growth: birthday 0.2/cake, classic 0.5/cake
+    const growthRate = gameMode === 'birthday' ? 0.2 : 0.5;
+    growthAccum += growthRate;
+    if (growthAccum >= 1) {
+      growthAccum -= 1;
+      // Don't pop tail → snake grows by 1 segment
+    } else {
+      snake.pop(); // no growth this tick
+    }
 
     updateHUD();
 
@@ -168,37 +466,40 @@ function tick() {
 function triggerLevelUp() {
   clearInterval(gameLoop);
   gameState = 'levelup';
-  Sounds.levelUp();
 
+  if (gameMode === 'birthday') {
+    // Birthday: silent level advance — no popup, no sound, just keep going
+    level++;
+    levelPoints = 0;
+    updateHUD();
+    gameState = 'playing';
+    spawnFood();
+    scheduleLoop();
+    return;
+  }
+
+  // Classic mode: full banner + checkpoint + quote
+  Sounds.levelUp();
   showLevelUpBanner(level, () => {
     level++;
     levelPoints = 0;
 
-    if (gameMode === 'classic') {
-      // Save checkpoint at entry of new level
-      checkpointSnake  = snake.map(s => ({ ...s }));
-      checkpointScore  = score;
-      checkpointLevel  = level;
-      hearts = 3;
-      updateHeartsDisplay();
-    }
+    // Save checkpoint at entry of new level
+    checkpointSnake  = snake.map(s => ({ ...s }));
+    checkpointScore  = score;
+    checkpointLevel  = level;
+    hearts = 3;
+    updateHeartsDisplay();
 
     updateHUD();
     hideOverlay();
 
-    if (gameMode === 'classic') {
-      const quote = getQuoteForLevel();
-      showQuote(quote, () => {
-        gameState = 'playing';
-        spawnFood();
-        scheduleLoop();
-      });
-    } else {
-      // Birthday mode — no quotes, immediately continue
+    const quote = getQuoteForLevel();
+    showQuote(quote, () => {
       gameState = 'playing';
       spawnFood();
       scheduleLoop();
-    }
+    });
   });
 }
 
@@ -213,7 +514,7 @@ function showLevelUpBanner(completedLevel, cb) {
       <div class="lu-sub">${sub}</div>
     </div>
   `);
-  setTimeout(cb, 2000);
+  setTimeout(cb, gameMode === 'birthday' ? 1000 : 2000);
 }
 
 // ─── Classic: Hearts / Respawn ────────────────────────────────────────────
@@ -567,18 +868,74 @@ function spawnFood() {
 
 // ─── Controls ────────────────────────────────────────────────────────────────
 function bindControls() {
+  // Keyboard controls
   document.addEventListener('keydown', e => {
+    const gameKeys = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d',' ','Enter','Escape'];
+    if (gameKeys.includes(e.key)) e.preventDefault();
     unlockAudio();
     handleDirection(e.key);
     if (e.key === 'Enter' || e.key === ' ') handleStart();
     if (e.key === 'Escape') handleSelect();
   });
-  btnUp.addEventListener('click',     () => { unlockAudio(); handleDirection('ArrowUp'); });
-  btnDown.addEventListener('click',   () => { unlockAudio(); handleDirection('ArrowDown'); });
-  btnLeft.addEventListener('click',   () => { unlockAudio(); handleDirection('ArrowLeft'); });
-  btnRight.addEventListener('click',  () => { unlockAudio(); handleDirection('ArrowRight'); });
+
+  // Start / Pause buttons
   btnStart.addEventListener('click',  () => { unlockAudio(); handleStart(); });
   btnSelect.addEventListener('click', () => { unlockAudio(); handleSelect(); });
+
+  // ─── Swipe Gesture Controls (touch devices) ─────────────────────────────
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  const SWIPE_THRESHOLD = 20; // minimum px to count as swipe
+
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+    unlockAudio();
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+
+    // If it's a quick tap with no movement — treat as start/pause
+    if (absDx < 10 && absDy < 10 && dt < 300) {
+      // Only handle tap on canvas area for start/pause
+      const rect = canvas.getBoundingClientRect();
+      const tx = e.changedTouches[0].clientX;
+      const ty = e.changedTouches[0].clientY;
+      if (tx >= rect.left && tx <= rect.right && ty >= rect.top && ty <= rect.bottom) {
+        if (gameState === 'idle' || gameState === 'dead') {
+          handleStart();
+        } else if (gameState === 'playing') {
+          handleSelect(); // pause
+        } else if (gameState === 'paused') {
+          handleStart(); // resume
+        }
+      }
+      return;
+    }
+
+    // Swipe detected
+    if (absDx < SWIPE_THRESHOLD && absDy < SWIPE_THRESHOLD) return;
+
+    if (absDx > absDy) {
+      // Horizontal swipe
+      handleDirection(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+    } else {
+      // Vertical swipe
+      handleDirection(dy > 0 ? 'ArrowDown' : 'ArrowUp');
+    }
+  }, { passive: true });
+
+  // Prevent pull-to-refresh and scroll on touch move during gameplay
+  document.addEventListener('touchmove', e => {
+    if (gameState === 'playing') e.preventDefault();
+  }, { passive: false });
 }
 
 function handleDirection(key) {
