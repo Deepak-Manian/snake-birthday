@@ -54,8 +54,8 @@
 <main>
 
   <!-- HUD -->
-  <div class="hud">
-    <div class="hud-block">
+  <div class="hud" id="hud">
+    <div class="hud-block" id="scoreBlock">
       <span class="hud-label">SCORE</span>
       <span class="hud-val" id="scoreVal">000000</span>
     </div>
@@ -66,7 +66,7 @@
       <span class="hud-val" id="heartsVal" style="color:var(--secondary);letter-spacing:2px;">♥♥♥</span>
     </div>
 
-    <div class="hud-block" style="align-items:flex-end">
+    <div class="hud-block" id="highScoreBlock" style="align-items:flex-end">
       <span class="hud-label">HIGH SCORE</span>
       <span class="hud-val hi" id="highScoreVal">000000</span>
     </div>
