@@ -72,13 +72,13 @@
     </div>
   </div>
 
+  <!-- Level Badge (outside the game canvas) -->
+  <div class="level-badge">LVL <span id="levelVal">01</span></div>
+
   <!-- Game Screen -->
   <div class="game-wrap" id="gameWrap">
     <!-- CRT Scanline Overlay -->
     <div class="absolute inset-0 crt-overlay" style="position:absolute;inset:0"></div>
-
-    <!-- Level Badge -->
-    <div class="level-badge">LVL <span id="levelVal">01</span></div>
 
     <!-- Canvas -->
     <canvas id="gameCanvas"></canvas>
@@ -100,40 +100,27 @@
   </div>
 
   <!-- ─── Controls ─────────────────────────────────────────────────────── -->
-  <div class="controls-section">
+  <div class="controls-row">
+    <button class="ctrl-icon-btn" id="btnSelect" aria-label="Pause">
+      <span class="material-symbols-outlined">pause</span>
+    </button>
 
-    <!-- D-Pad -->
-    <div class="dpad">
-      <div></div>
-      <button class="dpad-btn" id="btnUp" aria-label="Up">
-        <span class="material-symbols-outlined">arrow_drop_up</span>
-      </button>
-      <div></div>
-      <button class="dpad-btn" id="btnLeft" aria-label="Left">
-        <span class="material-symbols-outlined">arrow_left</span>
-      </button>
-      <div class="dpad-center"></div>
-      <button class="dpad-btn" id="btnRight" aria-label="Right">
-        <span class="material-symbols-outlined">arrow_right</span>
-      </button>
-      <div></div>
-      <button class="dpad-btn" id="btnDown" aria-label="Down">
-        <span class="material-symbols-outlined">arrow_drop_down</span>
-      </button>
-      <div></div>
+    <!-- Touch hint (visible on touch devices only) -->
+    <div class="touch-hint" id="touchHint">
+      <span class="material-symbols-outlined" style="font-size:16px;">swipe</span>
+      SWIPE TO MOVE
     </div>
 
-    <!-- Start / Select -->
-    <div class="action-btns">
-      <div class="action-btn-wrap">
-        <button class="action-btn" id="btnSelect" aria-label="Pause"></button>
-        <span class="action-label">Pause</span>
-      </div>
-      <div class="action-btn-wrap">
-        <button class="action-btn" id="btnStart" aria-label="Start" style="background:rgba(160,255,195,0.4)"></button>
-        <span class="action-label">Start</span>
-      </div>
+    <!-- Keyboard hint (visible on desktop only) -->
+    <div class="keyboard-hint" id="keyboardHint">
+      <span class="key-cap">↑</span><span class="key-cap">↓</span><span class="key-cap">←</span><span class="key-cap">→</span>
+      <span class="hint-text">or</span>
+      <span class="key-cap">W</span><span class="key-cap">A</span><span class="key-cap">S</span><span class="key-cap">D</span>
     </div>
+
+    <button class="ctrl-icon-btn ctrl-icon-btn--start" id="btnStart" aria-label="Start">
+      <span class="material-symbols-outlined">play_arrow</span>
+    </button>
   </div>
 
   <!-- ─── Journey Tracker ────────────────────────────────────────────── -->
@@ -167,7 +154,7 @@
 </main>
 
 <!-- Game Script (type=module for ES imports) -->
-<script type="module" src="src/game.js"></script>
+<script src="src/game.js"></script>
 
 </body>
 </html>
