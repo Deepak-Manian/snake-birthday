@@ -727,8 +727,8 @@ function triggerBirthday() {
       <div class="bday-glitch" data-text="LEVEL 38">LEVEL 38</div>
       <div class="bday-title">UNLOCKED</div>
       <div class="bday-cake">🎂</div>
-      <div class="bday-msg">HAPPY BIRTHDAY<br><span class="bday-name">PLAYER_ONE</span></div>
-      <div class="bday-sub">You made it through all 37 levels.<br>That's 37 years of being absolutely legendary.</div>
+      <div class="bday-msg">HAPPY BIRTHDAY<br><span class="bday-name">SATHEESH!</span></div>
+      <div class="bday-sub">38 years young, thala.<br> The snake respects the seniority. 🐍🫡</div>
     </div>
   `);
 
@@ -836,19 +836,30 @@ function showMessage() {
         <div class="msg-body" id="msgBody">
           <!-- ✏️  PUT YOUR BIRTHDAY MESSAGE HERE -->
         <div id="msgContent" style="display:none;">
-To the one who never stops playing,
-
-Life is a game of levels, and you just cleared another big one.
-38 years of legendary moves, high scores, and resilient play.
-
-The best part of your story isn't the score — it's the journey.
-Keep growing, keep gaming, and keep being you.
-
-HAPPY 38th BIRTHDAY!
-The world is lucky to have you in the game.
-
-...Love playing the game ah?
-Let's see how big you can really get. The real game begins now.
+Thala,
+ 
+Yes, I made you a snake game for your birthday.
+ 
+We met during COVID when the whole world shut down
+and somehow the best thing that came out of that whole
+mess was having you next door. Movies, random nonsense,
+absolutely unhinged opinions about Vijay's politics —
+good times, anna.
+ 
+38 isn’t 'old'—it’s just the Director's Cut. More layers, better dialogue, and still 100% Thala swag. 
+You’re hitting that sweet spot where you have enough wisdom to give advice, 
+but enough 'bad opinion' energy to keep things interesting."
+ 
+You're one of those rare people who makes the place
+feel warmer just by being in it. I'm glad the universe
+locked us both in the same building that year.
+ 
+Here's to more years of good films, bad opinions,
+and me having someone worth talking to.
+ 
+Happy Birthday, anna.
+ 
+— Deepak 🖤
         </div>
         </div>
       </div>
